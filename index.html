@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Digital Photobooth</title>
 
 <style>
@@ -13,9 +13,7 @@
     --text: #ffffff;
 }
 
-* {
-    box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
     margin: 0;
@@ -24,13 +22,9 @@ body {
     color: var(--text);
 }
 
-.app-container {
-    display: flex;
-    height: 100vh;
-}
+.app-container { display: flex; height: 100vh; }
 
 /* ================= SETTINGS ================= */
-
 #settingsBtn {
     position: fixed;
     left: 12px;
@@ -58,14 +52,9 @@ body {
     z-index: 999;
 }
 
-#settingsPanel.open {
-    left: 0;
-}
+#settingsPanel.open { left: 0; }
 
-#settingsPanel h3 {
-    margin-top: 60px;
-    margin-bottom: 15px;
-}
+#settingsPanel h3 { margin-top: 60px; margin-bottom: 15px; }
 
 #settingsPanel button {
     width: 100%;
@@ -78,12 +67,9 @@ body {
     cursor: pointer;
 }
 
-#settingsPanel button.active {
-    background: var(--accent);
-}
+#settingsPanel button.active { background: var(--accent); }
 
 /* ================= BOOTH ================= */
-
 .booth-side {
     flex: 1;
     display: flex;
@@ -93,10 +79,7 @@ body {
     padding: 10px;
 }
 
-header {
-    text-align: center;
-    margin-bottom: 10px;
-}
+header { text-align: center; margin-bottom: 10px; }
 
 .camera-box {
     position: relative;
@@ -123,14 +106,8 @@ video {
     pointer-events: none;
 }
 
-.flash-trigger {
-    animation: flash 0.4s;
-}
-
-@keyframes flash {
-    from { opacity: 1; }
-    to { opacity: 0; }
-}
+.flash-trigger { animation: flash 0.4s; }
+@keyframes flash { from { opacity: 1; } to { opacity: 0; } }
 
 #countdown {
     position: absolute;
@@ -151,16 +128,9 @@ video {
     justify-content: center;
 }
 
-.control-group {
-    display: flex;
-    flex-direction: column;
-    font-size: 14px;
-}
+.control-group { display: flex; flex-direction: column; font-size: 14px; }
 
-select {
-    padding: 8px;
-    border-radius: 6px;
-}
+select { padding: 8px; border-radius: 6px; }
 
 #startBtn {
     background: var(--accent);
@@ -172,13 +142,9 @@ select {
     cursor: pointer;
 }
 
-#startBtn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
+#startBtn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ================= GALLERY ================= */
-
 .gallery-side {
     width: 350px;
     background: var(--card);
@@ -193,48 +159,21 @@ select {
     color: black;
 }
 
-.strip-container img {
-    width: 100%;
-    display: block;
-    margin-bottom: 8px;
-}
-
-.strip-container a,
-.strip-container button {
-    margin-right: 6px;
-}
+.strip-container img { width: 100%; display: block; margin-bottom: 8px; }
+.strip-container a, .strip-container button { margin-right: 6px; }
 
 /* ================= MOBILE ================= */
-
 @media (max-width: 768px) {
-    .app-container {
-        flex-direction: column;
-    }
-
-    .gallery-side {
-        width: 100%;
-        order: 2;
-    }
-
-    .booth-side {
-        order: 1;
-    }
-
-    .controls {
-        flex-direction: column;
-        width: 100%;
-    }
-
-    #startBtn {
-        width: 100%;
-        max-width: 300px;
-    }
+    .app-container { flex-direction: column; }
+    .gallery-side { width: 100%; order: 2; }
+    .booth-side { order: 1; }
+    .controls { flex-direction: column; width: 100%; }
+    #startBtn { width: 100%; max-width: 300px; }
 }
 </style>
 </head>
 
 <body>
-
 <button id="settingsBtn" aria-label="Camera Settings">⚙️</button>
 
 <div id="settingsPanel">
@@ -242,6 +181,15 @@ select {
     <button data-ratio="1:1">⬛ Square</button>
     <button data-ratio="3:4">📱 Portrait</button>
     <button data-ratio="4:3" class="active">🖥 Landscape</button>
+
+    <h3>Filter</h3>
+    <select id="filterSelect">
+        <option value="none">Normal</option>
+        <option value="grayscale(100%)">Noir (B&W)</option>
+        <option value="sepia(100%)">Vintage</option>
+        <option value="brightness(1.4) saturate(1.2)">Pop Art</option>
+        <option value="hue-rotate(180deg)">Dreamy</option>
+    </select>
 </div>
 
 <div class="app-container">
@@ -258,25 +206,13 @@ select {
         </div>
 
         <div class="controls">
-            <div class="control-group">
-                <label>Choose Filter</label>
-                <select id="filterSelect">
-                    <option value="none">Normal</option>
-                    <option value="grayscale(100%)">Noir (B&W)</option>
-                    <option value="sepia(100%)">Vintage</option>
-                    <option value="brightness(1.4) saturate(1.2)">Pop Art</option>
-                    <option value="hue-rotate(180deg)">Dreamy</option>
-                </select>
-            </div>
             <button id="startBtn">CAPTURE</button>
         </div>
     </main>
 
     <aside class="gallery-side">
         <h2>Your Strips</h2>
-        <div id="gallery">
-            <p class="empty-msg">No photos yet. Start a session!</p>
-        </div>
+        <div id="gallery"><p class="empty-msg">No photos yet. Start a session!</p></div>
     </aside>
 </div>
 
@@ -305,8 +241,9 @@ const cameraBox = document.querySelector(".camera-box");
 
 let captures = [];
 let isCapturing = false;
+let currentRatio = "4:3";
 
-/* CAMERA INIT */
+/* ================= CAMERA ================= */
 async function initCamera() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -317,24 +254,27 @@ async function initCamera() {
     }
 }
 
-/* SETTINGS */
-settingsBtn.onclick = () => {
-    settingsPanel.classList.toggle("open");
-};
+/* ================= SETTINGS ================= */
+settingsBtn.onclick = () => settingsPanel.classList.toggle("open");
 
 ratioButtons.forEach(btn => {
     btn.onclick = () => {
         ratioButtons.forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
 
-        const r = btn.dataset.ratio;
-        if (r === "1:1") cameraBox.style.aspectRatio = "1 / 1";
-        if (r === "3:4") cameraBox.style.aspectRatio = "3 / 4";
-        if (r === "4:3") cameraBox.style.aspectRatio = "4 / 3";
+        currentRatio = btn.dataset.ratio;
+        if (currentRatio === "1:1") cameraBox.style.aspectRatio = "1 / 1";
+        if (currentRatio === "3:4") cameraBox.style.aspectRatio = "3 / 4";
+        if (currentRatio === "4:3") cameraBox.style.aspectRatio = "4 / 3";
     };
 });
 
-/* CAPTURE FLOW */
+/* ================= FILTER ================= */
+filterSelect.value = "none";
+video.style.filter = filterSelect.value;
+filterSelect.onchange = () => video.style.filter = filterSelect.value;
+
+/* ================= CAPTURE FLOW ================= */
 startBtn.onclick = async () => {
     if (isCapturing) return;
 
@@ -360,20 +300,15 @@ function countdown(sec) {
     return new Promise(res => {
         let c = sec;
         countdownEl.textContent = c;
-
         const t = setInterval(() => {
             c--;
-            if (c > 0) {
-                countdownEl.textContent = c;
-            } else {
-                clearInterval(t);
-                countdownEl.textContent = "";
-                res();
-            }
+            if (c > 0) countdownEl.textContent = c;
+            else { clearInterval(t); countdownEl.textContent = ""; res(); }
         }, 1000);
     });
 }
 
+/* ================= SNAP FUNCTION — CROPPED CAPTURE ================= */
 function snap() {
     flashEl.classList.add("flash-trigger");
     setTimeout(() => flashEl.classList.remove("flash-trigger"), 400);
@@ -381,19 +316,42 @@ function snap() {
     shutter.currentTime = 0;
     shutter.play().catch(() => {});
 
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    const videoW = video.videoWidth;
+    const videoH = video.videoHeight;
 
+    let targetRatio = 4 / 3;
+    if (currentRatio === "1:1") targetRatio = 1;
+    if (currentRatio === "3:4") targetRatio = 3 / 4;
+
+    const videoRatio = videoW / videoH;
+    let sx, sy, sw, sh;
+
+    if (videoRatio > targetRatio) {
+        sh = videoH;
+        sw = videoH * targetRatio;
+        sx = (videoW - sw) / 2;
+        sy = 0;
+    } else {
+        sw = videoW;
+        sh = videoW / targetRatio;
+        sx = 0;
+        sy = (videoH - sh) / 2;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = sw;
+    canvas.height = sh;
     const ctx = canvas.getContext("2d");
     ctx.filter = filterSelect.value;
+
     ctx.translate(canvas.width, 0);
     ctx.scale(-1, 1);
-    ctx.drawImage(video, 0, 0);
+    ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
 
     captures.push(canvas.toDataURL("image/png"));
 }
 
+/* ================= BUILD STRIP ================= */
 function buildStrip() {
     const ctx = masterCanvas.getContext("2d");
     masterCanvas.width = PHOTO_WIDTH + PADDING * 2;
@@ -407,13 +365,7 @@ function buildStrip() {
         const img = new Image();
         img.src = src;
         img.onload = () => {
-            ctx.drawImage(
-                img,
-                PADDING,
-                PADDING + i * (PHOTO_HEIGHT + PADDING),
-                PHOTO_WIDTH,
-                PHOTO_HEIGHT
-            );
+            ctx.drawImage(img, PADDING, PADDING + i * (PHOTO_HEIGHT + PADDING), PHOTO_WIDTH, PHOTO_HEIGHT);
             if (++loaded === captures.length) addToGallery();
         };
     });
@@ -431,6 +383,7 @@ function addToGallery() {
     gallery.prepend(div);
 }
 
+/* ================= INIT ================= */
 initCamera();
 </script>
 
