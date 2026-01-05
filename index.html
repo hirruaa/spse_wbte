@@ -1,192 +1,438 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fixed Layering Ribbon</title>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/Draggable.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Digital Photobooth</title>
 
-    <style>
-        :root {
-            --ribbon-red: #c01aaa;
-            --ribbon-bright: #de3cff;
-            --ribbon-dark: #7d0a4d;
-            --shadow: rgba(0, 0, 0, 0.5);
-        }
+<style>
+:root {
+    --bg: #1a1a2e;
+    --card: #16213e;
+    --accent: #e94560;
+    --text: #ffffff;
+}
 
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #1a1a1a; }
+* {
+    box-sizing: border-box;
+}
 
-        #gift-wrap {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgb(255, 255, 255);
-            z-index: 100;
-        }
- 
-        /* 1. Background Ribbon Strip */
-        .ribbon-bg {
-            position: absolute;
-            width: 100%; height: 50px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: linear-gradient(to bottom, var(--ribbon-dark), var(--ribbon-red), var(--ribbon-bright), var(--ribbon-red), var(--ribbon-dark));
-            z-index: 10;
-        }
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+}
 
-        /* 2. Stretchy SVG - Layered behind everything except the strip */
-        #ribbon-svg {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            pointer-events: none;
-            z-index: 11;
-        }
+.app-container {
+    display: flex;
+    height: 100vh;
+}
 
-        /* 3. The Draggable Tails - FORCE Z-INDEX */
-        .tail-handle {
-            position: absolute;
-            width: 70px; height: 130px;
-            background: linear-gradient(to bottom, var(--ribbon-red), var(--ribbon-dark));
-            cursor: grab;
-            z-index: 12 !important; /* Force this to be lower than loops/knot */
-            clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 50% 85%, 0% 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: rgba(255,255,255,0.2);
-            font-family: sans-serif;
-            font-size: 10px;
-            user-select: none;
-            visibility: hidden;
-            box-shadow: 0 5px 10px var(--shadow);
-        }
+/* ================= SETTINGS ================= */
 
-        /* 4. The Loops - Layered ABOVE tails */
-        .loop {
-            position: absolute;
-            width: 95px; height: 80px;
-            background: linear-gradient(135deg, var(--ribbon-red), var(--ribbon-dark));
-            border-radius: 50% 50% 50% 50% / 70% 70% 30% 30%;
-            top: 50%;
-            z-index: 20; /* High Z-index */
-            box-shadow: inset 0 -5px 15px var(--ribbon-dark), 0 5px 10px var(--shadow);
-        }
-        .loop-left { left: calc(50% - 90px); transform: translateY(-50%) rotate(-15deg); }
-        .loop-right { left: calc(50% - 5px); transform: translateY(-50%) rotate(15deg); }
+#settingsBtn {
+    position: fixed;
+    left: 12px;
+    top: 12px;
+    z-index: 1000;
+    background: var(--card);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+    cursor: pointer;
+}
 
-        /* 5. The Knot - TOPMOST layer */
-        .knot {
-            position: absolute;
-            width: 55px; height: 65px;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: radial-gradient(circle at center, var(--ribbon-bright), var(--ribbon-red));
-            border-radius: 10px;
-            z-index: 30; /* Highest Z-index */
-            box-shadow: inset 0 0 10px var(--ribbon-dark), 0 5px 15px var(--shadow);
-        }
+#settingsPanel {
+    position: fixed;
+    top: 0;
+    left: -220px;
+    width: 200px;
+    height: 100%;
+    background: var(--card);
+    padding: 20px;
+    transition: left 0.3s ease;
+    z-index: 999;
+}
 
-        .instruction {
-            position: absolute;
-            bottom: 12%;
-            width: 100%;
-            text-align: center;
-            color: #d4af37;
-            font-family: sans-serif;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            font-size: 13px;
-        }
-    </style>
+#settingsPanel.open {
+    left: 0;
+}
+
+#settingsPanel h3 {
+    margin-top: 60px;
+    margin-bottom: 15px;
+}
+
+#settingsPanel button {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    background: #222;
+    color: white;
+    cursor: pointer;
+}
+
+#settingsPanel button.active {
+    background: var(--accent);
+}
+
+/* ================= BOOTH ================= */
+
+.booth-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.camera-box {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    aspect-ratio: 4 / 3;
+    background: black;
+    border: 6px solid white;
+    overflow: hidden;
+}
+
+video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+}
+
+#flash {
+    position: absolute;
+    inset: 0;
+    background: white;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.flash-trigger {
+    animation: flash 0.4s;
+}
+
+@keyframes flash {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+#countdown {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(60px, 15vw, 120px);
+    font-weight: bold;
+}
+
+.controls {
+    margin-top: 15px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    font-size: 14px;
+}
+
+select {
+    padding: 8px;
+    border-radius: 6px;
+}
+
+#startBtn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 14px 36px;
+    border-radius: 30px;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+#startBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ================= GALLERY ================= */
+
+.gallery-side {
+    width: 350px;
+    background: var(--card);
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.strip-container {
+    background: white;
+    padding: 10px;
+    margin-bottom: 20px;
+    color: black;
+}
+
+.strip-container img {
+    width: 100%;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.strip-container a,
+.strip-container button {
+    margin-right: 6px;
+}
+
+/* ================= MOBILE ================= */
+
+@media (max-width: 768px) {
+    .app-container {
+        flex-direction: column;
+    }
+
+    .gallery-side {
+        width: 100%;
+        order: 2;
+    }
+
+    .booth-side {
+        order: 1;
+    }
+
+    .controls {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    #startBtn {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+</style>
 </head>
+
 <body>
 
-    <div id="gift-wrap">
-        <div class="ribbon-bg"></div>
-        
-        <svg id="ribbon-svg">
-            <path id="path-left" fill="#c01a1a" />
-            <path id="path-right" fill="#c01a1a" />
-        </svg>
+<button id="settingsBtn" aria-label="Camera Settings">⚙️</button>
 
-        <div id="handle-left" class="tail-handle">PULL</div>
-        <div id="handle-right" class="tail-handle">PULL</div>
+<div id="settingsPanel">
+    <h3>Camera Size</h3>
+    <button data-ratio="1:1">⬛ Square</button>
+    <button data-ratio="3:4">📱 Portrait</button>
+    <button data-ratio="4:3" class="active">🖥 Landscape</button>
+</div>
 
-        <div class="loop loop-left"></div>
-        <div class="loop loop-right"></div>
-        <div class="knot"></div>
+<div class="app-container">
+    <main class="booth-side">
+        <header>
+            <h1>PHOTOBOOTH</h1>
+            <p>Strike a pose for 4 photos!</p>
+        </header>
 
-        <p class="instruction">Untie the gift</p>
-    </div>
+        <div class="camera-box">
+            <video id="video" autoplay playsinline></video>
+            <div id="countdown"></div>
+            <div id="flash"></div>
+        </div>
 
-    <script>
-        gsap.registerPlugin(Draggable);
+        <div class="controls">
+            <div class="control-group">
+                <label>Choose Filter</label>
+                <select id="filterSelect">
+                    <option value="none">Normal</option>
+                    <option value="grayscale(100%)">Noir (B&W)</option>
+                    <option value="sepia(100%)">Vintage</option>
+                    <option value="brightness(1.4) saturate(1.2)">Pop Art</option>
+                    <option value="hue-rotate(180deg)">Dreamy</option>
+                </select>
+            </div>
+            <button id="startBtn">CAPTURE</button>
+        </div>
+    </main>
 
-        const pathL = document.getElementById('path-left');
-        const pathR = document.getElementById('path-right');
+    <aside class="gallery-side">
+        <h2>Your Strips</h2>
+        <div id="gallery">
+            <p class="empty-msg">No photos yet. Start a session!</p>
+        </div>
+    </aside>
+</div>
 
-        function initPositions() {
-            const centerX = window.innerWidth / 2;
-            const centerY = window.innerHeight / 2;
-            
-            // Set starting point tucked under the knot
-            gsap.set("#handle-left", { x: centerX - 80, y: centerY + 10, rotation: 10, visibility: "visible" });
-            gsap.set("#handle-right", { x: centerX + 10, y: centerY + 10, rotation: -10, visibility: "visible" });
-            updateRibbons();
-        }
+<canvas id="masterCanvas" hidden></canvas>
+<audio id="shutterSound" src="shutter.mp3" preload="auto"></audio>
 
-        function updateRibbons() {
-            const centerX = window.innerWidth / 2;
-            const centerY = window.innerHeight / 2;
-            const hL = document.getElementById('handle-left')._gsap;
-            const hR = document.getElementById('handle-right')._gsap;
+<script>
+const PHOTO_COUNT = 4;
+const PHOTO_WIDTH = 400;
+const PHOTO_HEIGHT = 300;
+const PADDING = 20;
 
-            pathL.setAttribute('d', `M ${centerX - 15} ${centerY} L ${centerX} ${centerY} L ${hL.x + 70} ${hL.y} L ${hL.x} ${hL.y} Z`);
-            pathR.setAttribute('d', `M ${centerX} ${centerY} L ${centerX + 15} ${centerY} L ${hR.x + 70} ${hR.y} L ${hR.x} ${hR.y} Z`);
-        }
+const video = document.getElementById("video");
+const startBtn = document.getElementById("startBtn");
+const gallery = document.getElementById("gallery");
+const masterCanvas = document.getElementById("masterCanvas");
+const shutter = document.getElementById("shutterSound");
+const countdownEl = document.getElementById("countdown");
+const flashEl = document.getElementById("flash");
+const filterSelect = document.getElementById("filterSelect");
 
-        window.addEventListener('resize', initPositions);
-        gsap.ticker.add(updateRibbons);
+const settingsBtn = document.getElementById("settingsBtn");
+const settingsPanel = document.getElementById("settingsPanel");
+const ratioButtons = settingsPanel.querySelectorAll("button[data-ratio]");
+const cameraBox = document.querySelector(".camera-box");
 
-        function openGift() {
-            gsap.ticker.remove(updateRibbons);
-            const tl = gsap.timeline();
-            tl.to(".tail-handle", { y: window.innerHeight + 200, opacity: 0, duration: 0.8, ease: "power2.in" })
-              .to([".knot", ".loop", ".ribbon-bg", "path"], { scale: 0.5, opacity: 0, duration: 0.4, stagger: 0.05 }, "-=0.5")
-              .to("#gift-wrap", { y: "-100%", duration: 1, ease: "expo.inOut", onComplete: () => {
-                  confetti({ particleCount: 150, spread: 70 });
-              }});
-        }
+let captures = [];
+let isCapturing = false;
 
-        Draggable.create(".tail-handle", {
-            type: "x,y",
-            zIndexBoost: false, // CRITICAL FIX: Prevents GSAP from bringing the tail to the front during drag
-            onDrag: updateRibbons,
-            onDragEnd: function() {
-                const centerY = window.innerHeight / 2;
-                if (this.y > centerY + 250) {
-                    openGift();
-                } else {
-                    const centerX = window.innerWidth / 2;
-                    // Reset with clear zIndex to be safe
-                    gsap.to(this.target, { 
-                        x: this.target.id === "handle-left" ? centerX - 80 : centerX + 10, 
-                        y: centerY + 10, 
-                        duration: 0.6, 
-                        zIndex: 12, // Explicitly keep it low
-                        ease: "elastic.out(1, 0.5)" 
-                    });
-                }
+/* CAMERA INIT */
+async function initCamera() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        await video.play();
+    } catch {
+        alert("Camera access denied or unavailable.");
+    }
+}
+
+/* SETTINGS */
+settingsBtn.onclick = () => {
+    settingsPanel.classList.toggle("open");
+};
+
+ratioButtons.forEach(btn => {
+    btn.onclick = () => {
+        ratioButtons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        const r = btn.dataset.ratio;
+        if (r === "1:1") cameraBox.style.aspectRatio = "1 / 1";
+        if (r === "3:4") cameraBox.style.aspectRatio = "3 / 4";
+        if (r === "4:3") cameraBox.style.aspectRatio = "4 / 3";
+    };
+});
+
+/* CAPTURE FLOW */
+startBtn.onclick = async () => {
+    if (isCapturing) return;
+
+    isCapturing = true;
+    startBtn.disabled = true;
+    filterSelect.disabled = true;
+    captures = [];
+    document.querySelector(".empty-msg")?.remove();
+
+    for (let i = 0; i < PHOTO_COUNT; i++) {
+        await countdown(3);
+        snap();
+    }
+
+    buildStrip();
+
+    startBtn.disabled = false;
+    filterSelect.disabled = false;
+    isCapturing = false;
+};
+
+function countdown(sec) {
+    return new Promise(res => {
+        let c = sec;
+        countdownEl.textContent = c;
+
+        const t = setInterval(() => {
+            c--;
+            if (c > 0) {
+                countdownEl.textContent = c;
+            } else {
+                clearInterval(t);
+                countdownEl.textContent = "";
+                res();
             }
-        });
+        }, 1000);
+    });
+}
 
-        initPositions();
+function snap() {
+    flashEl.classList.add("flash-trigger");
+    setTimeout(() => flashEl.classList.remove("flash-trigger"), 400);
 
-		
-    </script>
+    shutter.currentTime = 0;
+    shutter.play().catch(() => {});
+
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    const ctx = canvas.getContext("2d");
+    ctx.filter = filterSelect.value;
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, 0, 0);
+
+    captures.push(canvas.toDataURL("image/png"));
+}
+
+function buildStrip() {
+    const ctx = masterCanvas.getContext("2d");
+    masterCanvas.width = PHOTO_WIDTH + PADDING * 2;
+    masterCanvas.height = PHOTO_HEIGHT * PHOTO_COUNT + PADDING * (PHOTO_COUNT + 1);
+
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, masterCanvas.width, masterCanvas.height);
+
+    let loaded = 0;
+    captures.forEach((src, i) => {
+        const img = new Image();
+        img.src = src;
+        img.onload = () => {
+            ctx.drawImage(
+                img,
+                PADDING,
+                PADDING + i * (PHOTO_HEIGHT + PADDING),
+                PHOTO_WIDTH,
+                PHOTO_HEIGHT
+            );
+            if (++loaded === captures.length) addToGallery();
+        };
+    });
+}
+
+function addToGallery() {
+    const url = masterCanvas.toDataURL("image/png");
+    const div = document.createElement("div");
+    div.className = "strip-container";
+    div.innerHTML = `
+        <img src="${url}">
+        <a href="${url}" download="photobooth-strip.png">Download</a>
+        <button onclick="window.print()">Print</button>
+    `;
+    gallery.prepend(div);
+}
+
+initCamera();
+</script>
+
 </body>
-</html>	
+</html>
