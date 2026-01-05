@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fixed Layering Ribbon</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/Draggable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --ribbon-red: #c01aaa;
+            --ribbon-bright: #de3cff;
+            --ribbon-dark: #7d0a4d;
+            --shadow: rgba(0, 0, 0, 0.5);
+        }
+
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #1a1a1a; }
+
+        #gift-wrap {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgb(255, 255, 255);
+            z-index: 100;
+        }
+ 
+        /* 1. Background Ribbon Strip */
+        .ribbon-bg {
+            position: absolute;
+            width: 100%; height: 50px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(to bottom, var(--ribbon-dark), var(--ribbon-red), var(--ribbon-bright), var(--ribbon-red), var(--ribbon-dark));
+            z-index: 10;
+        }
+
+        /* 2. Stretchy SVG - Layered behind everything except the strip */
+        #ribbon-svg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 11;
+        }
+
+        /* 3. The Draggable Tails - FORCE Z-INDEX */
+        .tail-handle {
+            position: absolute;
+            width: 70px; height: 130px;
+            background: linear-gradient(to bottom, var(--ribbon-red), var(--ribbon-dark));
+            cursor: grab;
+            z-index: 12 !important; /* Force this to be lower than loops/knot */
+            clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 50% 85%, 0% 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: rgba(255,255,255,0.2);
+            font-family: sans-serif;
+            font-size: 10px;
+            user-select: none;
+            visibility: hidden;
+            box-shadow: 0 5px 10px var(--shadow);
+        }
+
+        /* 4. The Loops - Layered ABOVE tails */
+        .loop {
+            position: absolute;
+            width: 95px; height: 80px;
+            background: linear-gradient(135deg, var(--ribbon-red), var(--ribbon-dark));
+            border-radius: 50% 50% 50% 50% / 70% 70% 30% 30%;
+            top: 50%;
+            z-index: 20; /* High Z-index */
+            box-shadow: inset 0 -5px 15px var(--ribbon-dark), 0 5px 10px var(--shadow);
+        }
+        .loop-left { left: calc(50% - 90px); transform: translateY(-50%) rotate(-15deg); }
+        .loop-right { left: calc(50% - 5px); transform: translateY(-50%) rotate(15deg); }
+
+        /* 5. The Knot - TOPMOST layer */
+        .knot {
+            position: absolute;
+            width: 55px; height: 65px;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle at center, var(--ribbon-bright), var(--ribbon-red));
+            border-radius: 10px;
+            z-index: 30; /* Highest Z-index */
+            box-shadow: inset 0 0 10px var(--ribbon-dark), 0 5px 15px var(--shadow);
+        }
+
+        .instruction {
+            position: absolute;
+            bottom: 12%;
+            width: 100%;
+            text-align: center;
+            color: #d4af37;
+            font-family: sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="gift-wrap">
+        <div class="ribbon-bg"></div>
+        
+        <svg id="ribbon-svg">
+            <path id="path-left" fill="#c01a1a" />
+            <path id="path-right" fill="#c01a1a" />
+        </svg>
+
+        <div id="handle-left" class="tail-handle">PULL</div>
+        <div id="handle-right" class="tail-handle">PULL</div>
+
+        <div class="loop loop-left"></div>
+        <div class="loop loop-right"></div>
+        <div class="knot"></div>
+
+        <p class="instruction">Untie the gift</p>
+    </div>
+
+    <script>
+        gsap.registerPlugin(Draggable);
+
+        const pathL = document.getElementById('path-left');
+        const pathR = document.getElementById('path-right');
+
+        function initPositions() {
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            
+            // Set starting point tucked under the knot
+            gsap.set("#handle-left", { x: centerX - 80, y: centerY + 10, rotation: 10, visibility: "visible" });
+            gsap.set("#handle-right", { x: centerX + 10, y: centerY + 10, rotation: -10, visibility: "visible" });
+            updateRibbons();
+        }
+
+        function updateRibbons() {
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            const hL = document.getElementById('handle-left')._gsap;
+            const hR = document.getElementById('handle-right')._gsap;
+
+            pathL.setAttribute('d', `M ${centerX - 15} ${centerY} L ${centerX} ${centerY} L ${hL.x + 70} ${hL.y} L ${hL.x} ${hL.y} Z`);
+            pathR.setAttribute('d', `M ${centerX} ${centerY} L ${centerX + 15} ${centerY} L ${hR.x + 70} ${hR.y} L ${hR.x} ${hR.y} Z`);
+        }
+
+        window.addEventListener('resize', initPositions);
+        gsap.ticker.add(updateRibbons);
+
+        function openGift() {
+            gsap.ticker.remove(updateRibbons);
+            const tl = gsap.timeline();
+            tl.to(".tail-handle", { y: window.innerHeight + 200, opacity: 0, duration: 0.8, ease: "power2.in" })
+              .to([".knot", ".loop", ".ribbon-bg", "path"], { scale: 0.5, opacity: 0, duration: 0.4, stagger: 0.05 }, "-=0.5")
+              .to("#gift-wrap", { y: "-100%", duration: 1, ease: "expo.inOut", onComplete: () => {
+                  confetti({ particleCount: 150, spread: 70 });
+              }});
+        }
+
+        Draggable.create(".tail-handle", {
+            type: "x,y",
+            zIndexBoost: false, // CRITICAL FIX: Prevents GSAP from bringing the tail to the front during drag
+            onDrag: updateRibbons,
+            onDragEnd: function() {
+                const centerY = window.innerHeight / 2;
+                if (this.y > centerY + 250) {
+                    openGift();
+                } else {
+                    const centerX = window.innerWidth / 2;
+                    // Reset with clear zIndex to be safe
+                    gsap.to(this.target, { 
+                        x: this.target.id === "handle-left" ? centerX - 80 : centerX + 10, 
+                        y: centerY + 10, 
+                        duration: 0.6, 
+                        zIndex: 12, // Explicitly keep it low
+                        ease: "elastic.out(1, 0.5)" 
+                    });
+                }
+            }
+        });
+
+        initPositions();
+
+		
+    </script>
+</body>
+</html>	
