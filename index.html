@@ -3,84 +3,351 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>✨ Aesthetic Photobooth ✨</title>
+    <title>✨ Aesthetic Interactive Studio ✨</title>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <style>
+        :root {
+            --pink-light: #fff5f7;
+            --pink-mid: #ffb7c5;
+            --pink-dark: #ff78ae;
+            --text: #5d4a4e;
+            --glass: rgba(255, 255, 255, 0.95);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; font-family: 'Quicksand', sans-serif; background: #fff5f7; color: var(--text); overflow: hidden; }
+
+        /* --- 3 Column Layout (PC) --- */
+        .app-container { display: flex; height: 100vh; width: 100vw; }
+
+        /* Column 1: Camera (PC: Left) */
+        .booth-side { flex: 1.5; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; position: relative; }
+
+        /* Column 2: Controls (PC: Middle) */
+        .control-sidebar { width: 280px; background: var(--pink-light); padding: 20px; overflow-y: auto; border-left: 1px solid var(--pink-mid); border-right: 1px solid var(--pink-mid); }
+
+        /* Column 3: Gallery (PC: Right) */
+        .gallery-side { width: 320px; background: white; padding: 20px; overflow-y: auto; }
+
+        /* --- Camera UI --- */
+        .camera-wrapper { background: white; padding: 10px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); position: relative; width: 90%; max-width: 500px; }
+        .camera-box { position: relative; aspect-ratio: 4/3; background: #000; border-radius: 15px; overflow: hidden; border: 3px solid var(--pink-mid); cursor: move; }
+        video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        #liveCanvas { position: absolute; inset: 0; z-index: 5; width: 100%; height: 100%; }
+
+        /* --- Controls --- */
+        .control-group { background: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+        .control-group h4 { margin: 0 0 10px 0; color: var(--pink-dark); font-size: 14px; text-transform: uppercase; }
+        
+        .grid-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .quick-btn { background: var(--pink-light); border: 1px solid var(--pink-mid); padding: 8px; border-radius: 10px; cursor: pointer; font-family: inherit; font-weight: 600; font-size: 12px; transition: 0.2s; }
+        .quick-btn:hover { background: var(--pink-dark); color: white; }
+        
+        input[type="range"] { width: 100%; accent-color: var(--pink-dark); }
+
+        #startBtn { background: var(--pink-dark); color: white; border: none; padding: 15px 30px; border-radius: 30px; font-weight: 700; width: 100%; cursor: pointer; margin-top: 10px; }
+
+        /* --- Gallery Items --- */
+        .strip-item { position: relative; background: #f9f9f9; padding: 10px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .strip-item img { width: 100%; display: block; }
+        .delete-btn { position: absolute; top: -10px; right: -10px; background: #ff4d4d; color: white; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; font-weight: bold; }
+
+        /* --- Settings Modal --- */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { background: white; padding: 25px; border-radius: 20px; width: 320px; }
+
+        /* --- Mobile Overrides --- */
+        @media (max-width: 1024px) {
+            .app-container { flex-direction: column; overflow-y: auto; }
+            .booth-side { order: 1; flex: none; height: 400px; padding-top: 20px; }
+            .control-sidebar { order: 2; width: 100%; height: auto; display: flex; overflow-x: auto; gap: 10px; padding: 10px; border: none; }
+            .control-group { min-width: 200px; margin-bottom: 0; flex-shrink: 0; }
+            .gallery-side { order: 3; width: 100%; }
+            #startBtn { position: fixed; bottom: 20px; right: 20px; width: auto; z-index: 100; padding: 15px 20px; border-radius: 50%; font-size: 20px; }
+        }
+
+        #flash { position: absolute; inset: 0; background: white; opacity: 0; pointer-events: none; z-index: 10; }
+        .flash-trigger { animation: flashAnim 0.4s; }
+        @keyframes flashAnim { from { opacity: 1; } to { opacity: 0; } }
+        #countdown { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 80px; color: white; font-weight: bold; z-index: 11; pointer-events: none; }
+    </style>
 </head>
 <body>
 
-<button id="settingsBtn" title="Customize">🪄</button>
-
-<div id="settingsModal" class="modal">
-    <div class="modal-content">
-        <h2>🪄 Custom Vibe</h2>
-        
-        <div class="setting-group">
-            <label>Filter Effect</label>
-            <select id="filterSelect">
-                <option value="none">✨ Natural</option>
-                <option value="brightness(1.1) saturate(1.4) contrast(1.1)">🎀 Pink Glow</option>
-                <option value="grayscale(100%) contrast(1.2)">🖤 Soft Noir</option>
-                <option value="sepia(60%) brightness(1.1)">☁️ Dreamy Vintage</option>
-                <option value="saturate(2) brightness(1.1)">🍭 Candy</option>
-            </select>
-        </div>
-
-        <div class="setting-group">
-            <label>Sticker Overlay</label>
-            <select id="stickerSelect">
-                <option value="none">None</option>
-                <option value="hearts">💕 Pink Hearts</option>
-                <option value="sparkles">✨ Magic Sparkles</option>
-                <option value="stars">⭐ Golden Stars</option>
-            </select>
-        </div>
-
-        <div class="setting-group">
-            <label>Photo Count (1-6)</label>
-            <input type="number" id="photoCountInput" value="4" min="1" max="6">
-        </div>
-
-        <div class="setting-group">
-            <label>Countdown (sec)</label>
-            <input type="number" id="timerInput" value="3" min="1" max="10">
-        </div>
-
-        <button id="closeSettings" class="primary-btn">Save & Close</button>
-    </div>
-</div>
-
 <div class="app-container">
-    <main class="booth-side no-print">
-        <header>
-            <h1 class="sparkle-text">Sweet Captures</h1>
-            <p>Every moment is a memory ✨</p>
-        </header>
-
+    <main class="booth-side">
+        <button id="settingsBtn" style="position:absolute; top:10px; left:10px; border:none; background:none; cursor:pointer; font-size:20px;">⚙️ Settings</button>
         <div class="camera-wrapper">
-            <div class="camera-box">
+            <div class="camera-box" id="dragArea">
                 <video id="video" autoplay playsinline></video>
+                <canvas id="liveCanvas"></canvas>
                 <div id="countdown"></div>
                 <div id="flash"></div>
             </div>
+            <p style="font-size: 11px; text-align: center; color: #888; margin-top: 5px;">Drag stickers to move them! ✨</p>
         </div>
-
-        <div class="actions">
-            <button id="startBtn">✨ START SESSION ✨</button>
-        </div>
+        <button id="startBtn">📸 START</button>
     </main>
 
-    <aside class="gallery-side no-print">
-        <h2>Your Gallery</h2>
-        <div id="gallery">
-            <p class="empty-msg">Take a photo to see your aesthetic strip!</p>
+    <aside class="control-sidebar">
+        <div class="control-group">
+            <h4>Filter Strength</h4>
+            <input type="range" id="filterIntensity" min="0" max="200" value="100">
+            <div class="grid-options" style="margin-top:10px;">
+                <button class="quick-btn" onclick="setFilter('none')">Normal</button>
+                <button class="quick-btn" onclick="setFilter('pink')">🎀 Pink</button>
+                <button class="quick-btn" onclick="setFilter('noir')">🖤 Noir</button>
+                <button class="quick-btn" onclick="setFilter('candy')">🍭 Candy</button>
+            </div>
         </div>
+
+        <div class="control-group">
+            <h4>Stickers</h4>
+            <div class="grid-options">
+                <button class="quick-btn" onclick="addSticker('💕')">💕</button>
+                <button class="quick-btn" onclick="addSticker('✨')">✨</button>
+                <button class="quick-btn" onclick="addSticker('⭐')">⭐</button>
+                <button class="quick-btn" onclick="addSticker('🌸')">🌸</button>
+                <button class="quick-btn" onclick="addSticker('🎀')">🎀</button>
+                <button class="quick-btn" onclick="clearStickers()" style="background:#ffdada">Clear</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <h4>BG Pattern</h4>
+            <div class="grid-options">
+                <button class="quick-btn" onclick="setBG('white')">Plain</button>
+                <button class="quick-btn" onclick="setBG('hearts')">Hearts</button>
+                <button class="quick-btn" onclick="setBG('dots')">Dots</button>
+            </div>
+        </div>
+    </aside>
+
+    <aside class="gallery-side">
+        <h3 style="margin-top:0">Gallery</h3>
+        <div id="gallery"></div>
     </aside>
 </div>
 
-<canvas id="masterCanvas" hidden></canvas>
-<audio id="shutterSound" src="shutter.mp3" preload="auto"></audio>
+<div id="settingsModal" class="modal">
+    <div class="modal-content">
+        <h3>Studio Config</h3>
+        <label>Layout:</label>
+        <select id="layoutSelect" class="quick-btn" style="width:100%; margin-bottom:10px;">
+            <option value="strip">Classic Strip</option>
+            <option value="polaroid">Retro Polaroid</option>
+            <option value="grid">2x2 Grid</option>
+        </select>
+        <label>Overlay Text:</label>
+        <input type="text" id="overlayText" placeholder="Happy Day!" class="quick-btn" style="width:100%; margin-bottom:10px;">
+        <button id="closeModal" class="quick-btn" style="background:var(--pink-dark); color:white; width:100%;">Save</button>
+    </div>
+</div>
 
-<script src="script.js"></script>
+<canvas id="masterCanvas" hidden></canvas>
+
+<script>
+    const video = document.getElementById('video');
+    const liveCanvas = document.getElementById('liveCanvas');
+    const lCtx = liveCanvas.getContext('2d');
+    const dragArea = document.getElementById('dragArea');
+    
+    let filterType = 'none';
+    let filterVal = 100;
+    let bgPattern = 'white';
+    let stickers = [];
+    let isDragging = false;
+    let draggedSticker = null;
+
+    // --- 1. Setup ---
+    window.onload = () => {
+        loadHistory();
+        navigator.mediaDevices.getUserMedia({video: true}).then(s => {
+            video.srcObject = s;
+            liveCanvas.width = 400; liveCanvas.height = 300;
+            animate();
+        });
+    };
+
+    // --- 2. Live Interaction & Dragging ---
+    function animate() {
+        lCtx.clearRect(0,0,400,300);
+        lCtx.textAlign = "center";
+        stickers.forEach(s => {
+            lCtx.font = `${s.size}px serif`;
+            lCtx.fillText(s.char, s.x, s.y);
+        });
+        requestAnimationFrame(animate);
+    }
+
+    window.addSticker = (char) => {
+        stickers.push({ char, x: 200, y: 150, size: 40 });
+    };
+    window.clearStickers = () => stickers = [];
+
+    // Drag Logic
+    dragArea.onmousedown = (e) => startDrag(e.offsetX, e.offsetY);
+    dragArea.ontouchstart = (e) => {
+        const rect = dragArea.getBoundingClientRect();
+        startDrag(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+    };
+
+    function startDrag(ex, ey) {
+        // Find if we clicked on a sticker (reverse loop to catch the top one)
+        for(let i = stickers.length - 1; i >= 0; i--) {
+            const s = stickers[i];
+            const dx = ex - s.x;
+            const dy = ey - (s.y - 20); // offset for text alignment
+            if(Math.sqrt(dx*dx + dy*dy) < 30) {
+                isDragging = true;
+                draggedSticker = s;
+                break;
+            }
+        }
+    }
+
+    window.onmousemove = (e) => moveDrag(e);
+    window.ontouchmove = (e) => moveDrag(e.touches[0]);
+
+    function moveDrag(e) {
+        if(!isDragging || !draggedSticker) return;
+        const rect = dragArea.getBoundingClientRect();
+        draggedSticker.x = (e.clientX - rect.left) * (400 / rect.width);
+        draggedSticker.y = (e.clientY - rect.top) * (300 / rect.height);
+    }
+    window.onmouseup = window.ontouchend = () => isDragging = false;
+
+    // --- 3. Filter Engine ---
+    window.setFilter = (f) => { filterType = f; updateFilter(); };
+    document.getElementById('filterIntensity').oninput = (e) => { filterVal = e.target.value; updateFilter(); };
+
+    function updateFilter() {
+        let fStr = 'none';
+        const p = filterVal / 100;
+        if(filterType === 'pink') fStr = `brightness(${1 + (0.1*p)}) saturate(${1 + (0.4*p)}) contrast(${1 + (0.1*p)})`;
+        if(filterType === 'noir') fStr = `grayscale(${100*p}%) contrast(${1 + (0.2*p)})`;
+        if(filterType === 'candy') fStr = `saturate(${1 + p}) brightness(${1 + (0.1*p)})`;
+        video.style.filter = fStr;
+    }
+
+    window.setBG = (type) => bgPattern = type;
+
+    // --- 4. Capture & Storage ---
+    document.getElementById('startBtn').onclick = async () => {
+        const layout = document.getElementById('layoutSelect').value;
+        const count = layout === 'polaroid' ? 1 : 4;
+        const photos = [];
+        for(let i=0; i<count; i++) {
+            await countdown(3);
+            photos.push(snap());
+        }
+        buildFinal(photos, layout);
+    };
+
+    function countdown(s) {
+        return new Promise(res => {
+            let c = s;
+            const el = document.getElementById('countdown');
+            const t = setInterval(() => {
+                el.innerText = c;
+                if(c-- <= 0) { clearInterval(t); el.innerText=""; res(); }
+            }, 1000);
+        });
+    }
+
+    function snap() {
+        document.getElementById('flash').classList.add('flash-trigger');
+        setTimeout(() => document.getElementById('flash').classList.remove('flash-trigger'), 400);
+        const canvas = document.createElement('canvas');
+        canvas.width = 800; canvas.height = 600;
+        const ctx = canvas.getContext('2d');
+        const sw = video.videoHeight * (4/3); 
+        ctx.filter = video.style.filter;
+        ctx.translate(800,0); ctx.scale(-1,1);
+        ctx.drawImage(video, (video.videoWidth-sw)/2, 0, sw, video.videoHeight, 0, 0, 800, 600);
+        ctx.scale(-1,1); ctx.translate(-800,0);
+        stickers.forEach(s => { ctx.font = `${s.size*2}px serif`; ctx.textAlign="center"; ctx.fillText(s.char, s.x*2, s.y*2); });
+        return canvas.toDataURL();
+    }
+
+    function buildFinal(photos, type) {
+        const master = document.getElementById('masterCanvas');
+        const ctx = master.getContext('2d');
+        const label = document.getElementById('overlayText').value || "MEMORIES";
+
+        // Setup background
+        if(type === 'strip') { master.width = 440; master.height = 1350; }
+        else if(type === 'polaroid') { master.width = 600; master.height = 750; }
+        else { master.width = 860; master.height = 750; }
+
+        ctx.fillStyle = "white"; ctx.fillRect(0,0,master.width,master.height);
+        
+        // Draw Pattern
+        if(bgPattern !== 'white') {
+            ctx.fillStyle = bgPattern === 'hearts' ? '#fff0f3' : '#f0f4ff';
+            ctx.font = "20px serif";
+            for(let x=0; x<master.width; x+=40) {
+                for(let y=0; y<master.height; y+=40) {
+                    ctx.fillText(bgPattern === 'hearts' ? '💕' : '●', x, y);
+                }
+            }
+        }
+
+        photos.forEach((p, i) => {
+            const img = new Image(); img.src = p;
+            img.onload = () => {
+                if(type === 'strip') ctx.drawImage(img, 20, 20 + (i*320), 400, 300);
+                else if(type === 'polaroid') ctx.drawImage(img, 25, 25, 550, 412);
+                else ctx.drawImage(img, 20 + (i%2)*410, 20 + Math.floor(i/2)*310, 400, 300);
+                
+                if(i === photos.length-1) finalize(master, label);
+            }
+        });
+    }
+
+    function finalize(canvas, text) {
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = "#ff78ae"; ctx.font = "bold 28px Quicksand"; ctx.textAlign = "center";
+        ctx.fillText(text, canvas.width/2, canvas.height - 30);
+        const url = canvas.toDataURL();
+        renderToGallery(url);
+        saveHistory(url);
+    }
+
+    function renderToGallery(url) {
+        const div = document.createElement('div');
+        div.className = "strip-item";
+        div.innerHTML = `<button class="delete-btn" onclick="deleteImg(this, '${url}')">×</button>
+            <img src="${url}"><div style="display:flex; gap:5px;">
+            <button class="quick-btn" style="flex:1" onclick="shareImg('${url}')">Share</button>
+            <a href="${url}" download="studio.png" class="quick-btn" style="flex:1; text-decoration:none; text-align:center;">Save</a></div>`;
+        gallery.prepend(div);
+    }
+
+    window.deleteImg = (btn, url) => {
+        btn.parentElement.remove();
+        let h = JSON.parse(localStorage.getItem('studio_v3') || '[]');
+        localStorage.setItem('studio_v3', JSON.stringify(h.filter(x => x !== url)));
+    };
+
+    window.shareImg = async (u) => {
+        const b = await (await fetch(u)).blob();
+        const f = new File([b], 'photo.png', {type:'image/png'});
+        if(navigator.share) navigator.share({files:[f]});
+    };
+
+    function saveHistory(u) {
+        let h = JSON.parse(localStorage.getItem('studio_v3') || '[]');
+        h.unshift(u);
+        localStorage.setItem('studio_v3', JSON.stringify(h.slice(0,10)));
+    }
+    function loadHistory() {
+        let h = JSON.parse(localStorage.getItem('studio_v3') || '[]');
+        h.forEach(u => renderToGallery(u));
+    }
+
+    document.getElementById('settingsBtn').onclick = () => document.getElementById('settingsModal').style.display='flex';
+    document.getElementById('closeModal').onclick = () => document.getElementById('settingsModal').style.display='none';
+</script>
 </body>
 </html>
